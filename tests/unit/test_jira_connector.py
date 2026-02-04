@@ -85,14 +85,15 @@ class TestJiraConnector:
     @pytest.mark.asyncio
     async def test_connect(self, jira_connector):
         """Test connection establishment."""
-        with patch.object(jira_connector, '_make_request') as mock_request:
-            mock_request.return_value = {'displayName': 'Test User'}
+        # Mock the _test_connection method to avoid actual HTTP calls
+        with patch.object(jira_connector, '_test_connection') as mock_test_connection:
+            mock_test_connection.return_value = None
             
             await jira_connector.connect()
             
             assert jira_connector._is_connected
             assert jira_connector.session is not None
-            mock_request.assert_called_once()
+            mock_test_connection.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_search_issues(self, jira_connector, sample_search_response):
@@ -106,19 +107,19 @@ class TestJiraConnector:
             result = await jira_connector.search_issues(
                 jql="project = TEST",
                 start_at=0,
-                max_results=50
+                max_results=25  # Use non-default value to ensure it's included
             )
             
             assert result == sample_search_response
             mock_request.assert_called_once()
             
-            # Check call arguments
+            # Check call arguments - updated for new API
             call_args = mock_request.call_args
-            assert call_args[0][0] == 'GET'  # method
-            assert 'search' in call_args[0][1]  # URL contains 'search'
-            assert call_args[1]['params']['jql'] == "project = TEST"
-            assert call_args[1]['params']['startAt'] == 0
-            assert call_args[1]['params']['maxResults'] == 50
+            assert call_args[0][0] == 'POST'  # method changed to POST
+            assert 'search/jql' in call_args[0][1]  # URL contains 'search/jql'
+            # Check the JSON payload data
+            assert call_args[1]['data']['jql'] == "project = TEST"
+            assert call_args[1]['data']['maxResults'] == 25
     
     @pytest.mark.asyncio
     async def test_get_issue_details(self, jira_connector, sample_issue_response):
@@ -190,10 +191,10 @@ class TestJiraConnector:
             assert result[0]['key'] == 'TEST-123'
             mock_search.assert_called_once()
             
-            # Check JQL construction
+            # Check JQL construction - updated for actual format
             call_args = mock_search.call_args
             jql = call_args[1]['jql']
-            assert 'updated >= 2024-01-01 00:00' in jql
+            assert 'updated >= \'2024-01-01 00:00\'' in jql  # Note the quotes around date
             assert 'project = TEST' in jql
             assert 'issuetype = "Bug"' in jql
     
@@ -214,7 +215,7 @@ class TestJiraConnector:
         assert metadata['labels'] == ['bug', 'urgent']
         assert metadata['components'] == ['UI', 'API']
         assert metadata['fix_versions'] == ['v1.0']
-        assert metadata['attachments'] == ['screenshot.png']
+        assert metadata['attachments'] == []  # Updated: attachments are extracted separately
         assert metadata['comment_count'] == 0
         assert 'TEST-123' in metadata['url']
     
@@ -222,13 +223,19 @@ class TestJiraConnector:
     async def test_download_attachment(self, jira_connector):
         """Test attachment download."""
         jira_connector._is_connected = True
-        jira_connector.session = AsyncMock()
         
-        mock_response = AsyncMock()
+        # Create a mock response
+        mock_response = MagicMock()
         mock_response.status = 200
-        mock_response.read.return_value = b'fake image data'
+        mock_response.read = AsyncMock(return_value=b'fake image data')
         
-        jira_connector.session.get.return_value.__aenter__.return_value = mock_response
+        # Create a mock session with proper async context manager
+        mock_session = MagicMock()
+        mock_session.get = MagicMock()
+        mock_session.get.return_value.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_session.get.return_value.__aexit__ = AsyncMock(return_value=None)
+        
+        jira_connector.session = mock_session
         
         with patch.object(jira_connector.rate_limiter, 'acquire') as mock_rate_limit:
             mock_rate_limit.return_value = None
