@@ -27,7 +27,7 @@ async def main():
     """Main example function."""
     
     # Setup logging
-    logger = setup_logger("example", level=logging.INFO)
+    logger = setup_logger("example", "INFO")
     logger.info("Starting EVAgent RAG System Example")
     
     try:

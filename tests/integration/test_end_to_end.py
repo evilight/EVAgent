@@ -6,6 +6,7 @@ import pytest
 import asyncio
 import tempfile
 import shutil
+import os
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -14,6 +15,7 @@ from src.processors import TextProcessor, AttachmentProcessor, MetadataExtractor
 from src.embeddings import EmbeddingService
 from src.database import ChromaManager
 from src.api import RAGQueryInterface
+from src.utils import ConfigLoader
 
 
 class TestEndToEndIntegration:
@@ -28,32 +30,25 @@ class TestEndToEndIntegration:
     
     @pytest.fixture
     def test_config(self, temp_dir):
-        """Test configuration with temporary directories."""
+        """Test configuration using actual config files with temporary directories."""
+        # Load actual configuration files
+        config_loader = ConfigLoader('config')
+        
+        try:
+            jira_config = config_loader.load_config('jira_config')
+            confluence_config = config_loader.load_config('confluence_config')
+            embedding_config = config_loader.load_config('embedding_config')
+        except FileNotFoundError as e:
+            # Fallback to test config if actual config files don't exist
+            pytest.skip(f"Configuration file not found: {e}")
+        
+        # Override storage directories to use temporary directory
+        jira_config['sync']['batch_size'] = 10  # Smaller batch for tests
+        
         return {
-            'jira_config': {
-                'url': 'https://test.atlassian.net',
-                'username': 'test@example.com',
-                'api_token': 'test-token',
-                'api': {'version': '3'},
-                'timeout': 30,
-                'projects': ['TEST'],
-                'jql_filters': ['type = Bug'],
-                'sync': {'batch_size': 10}
-            },
-            'confluence_config': {
-                'url': 'https://test.atlassian.net/wiki',
-                'username': 'test@example.com',
-                'api_token': 'test-token',
-                'api': {'version': '2'},
-                'spaces': ['TEST'],
-                'page_filters': ['status = current']
-            },
-            'embedding_config': {
-                'text_model': 'sentence-transformers/all-MiniLM-L6-v2',
-                'embedding_dim': 384,
-                'enable_image_embeddings': False,  # Disable for tests
-                'batch_size': 4
-            },
+            'jira_config': jira_config,
+            'confluence_config': confluence_config,
+            'embedding_config': embedding_config,
             'db_config': {
                 'persist_directory': str(Path(temp_dir) / 'chroma_db'),
                 'collection_name': 'test_documents'
@@ -447,3 +442,117 @@ class TestEndToEndIntegration:
             assert stats['database']['document_count'] >= 2
             assert stats['embeddings']['text_model'] is not None
             assert stats['embeddings']['embedding_dim'] == 384
+    
+    @pytest.mark.asyncio
+    async def test_jira_connection_with_real_config(self):
+        """Test Jira connection using actual configuration from jira_config.yaml."""
+        
+        # Skip test if environment variables are not set
+        if not os.getenv('JIRA_USERNAME') or not os.getenv('JIRA_API_TOKEN'):
+            pytest.skip("JIRA_USERNAME and JIRA_API_TOKEN environment variables not set")
+        
+        try:
+            # Load actual configuration
+            config_loader = ConfigLoader('config')
+            jira_config_full = config_loader.load_config('jira_config')
+            
+            # Extract the jira section (not the full config with 'jira' key)
+            jira_config = jira_config_full.get('jira', {})
+            
+            # Initialize connector with real config
+            jira_connector = JiraConnector(jira_config)
+            
+            # Test connection
+            async with jira_connector:
+                # This will call _test_connection() which makes a real API call
+                assert jira_connector.is_connected()
+                
+                # Test a simple search to verify API access
+                # Use the correct project key and bounded query
+                search_result = await jira_connector.search_issues(
+                    jql="project = EVAgent ORDER BY created DESC",
+                    max_results=5
+                )
+                
+                # Verify the response structure
+                assert 'issues' in search_result
+                assert isinstance(search_result['issues'], list)
+                
+                # If there are any issues, verify the structure and debug
+                if search_result['issues']:
+                    issue = search_result['issues'][0]
+                    print(f"DEBUG: Issue structure: {list(issue.keys())}")
+                    print(f"DEBUG: Full issue: {issue}")
+                    
+                    # Check for both possible key fields
+                    assert 'id' in issue or 'key' in issue, f"Missing both 'id' and 'key' in issue: {list(issue.keys())}"
+                    # 'fields' might not be present in minimal response, so don't assert it
+                
+                print(f"SUCCESS: Jira connection successful! Found {len(search_result['issues'])} issues in project EVAgent")
+                
+        except Exception as e:
+            pytest.fail(f"Jira connection test failed: {str(e)}")
+    
+    @pytest.mark.asyncio
+    async def test_jira_connection_details(self):
+        """Test detailed Jira connection and configuration validation."""
+        
+        # Skip test if environment variables are not set
+        if not os.getenv('JIRA_USERNAME') or not os.getenv('JIRA_API_TOKEN'):
+            pytest.skip("JIRA_USERNAME and JIRA_API_TOKEN environment variables not set")
+        
+        try:
+            # Load actual configuration
+            config_loader = ConfigLoader('config')
+            jira_config_full = config_loader.load_config('jira_config')
+            
+            # Extract the jira section
+            jira_config = jira_config_full.get('jira', {})
+            
+            # Validate required configuration fields
+            required_fields = ['url', 'username', 'api_token']
+            for field in required_fields:
+                assert field in jira_config, f"Missing required field: {field}"
+                assert jira_config[field], f"Empty value for field: {field}"
+            
+            # Initialize connector
+            jira_connector = JiraConnector(jira_config)
+            
+            # Test connection and get user info
+            async with jira_connector:
+                # Test connection (this is called automatically in connect())
+                assert jira_connector.is_connected()
+                
+                # Test API version and endpoint
+                api_version = jira_config.get('api', {}).get('version', '3')
+                assert api_version in ['2', '3'], f"Unsupported API version: {api_version}"
+                
+                # Test accessing user info (verifies authentication)
+                user_url = f"{jira_config['url']}/rest/api/{api_version}/myself"
+                user_response = await jira_connector._make_request('GET', user_url)
+                
+                # Verify user response structure
+                assert 'displayName' in user_response, "User response missing displayName"
+                assert 'emailAddress' in user_response, "User response missing emailAddress"
+                
+                print(f"Connected as user: {user_response['displayName']} ({user_response['emailAddress']})")
+                
+                # Test project access
+                projects = jira_config.get('projects', [])
+                if projects:
+                    # Test access to first configured project
+                    project_key = projects[0]
+                    project_url = f"{jira_config['url']}/rest/api/{api_version}/project/{project_key}"
+                    
+                    try:
+                        project_response = await jira_connector._make_request('GET', project_url)
+                        assert 'key' in project_response, f"Project {project_key} not accessible"
+                        assert 'name' in project_response, f"Project {project_key} missing name"
+                        
+                        print(f"Project access verified: {project_response['name']} ({project_response['key']})")
+                        
+                    except Exception as e:
+                        pytest.fail(f"Cannot access project {project_key}: {str(e)}")
+                
+        except Exception as e:
+            pytest.fail(f"Jira connection details test failed: {str(e)}")

@@ -1,13 +1,11 @@
 jira:
-  url: "https://your-company.atlassian.net"
+  url: "https://evilight.atlassian.net"
   username: "${JIRA_USERNAME}"
   api_token: "${JIRA_API_TOKEN}"
   
   # Projects to monitor
   projects:
-    - "PROJ1"
-    - "PROJ2"
-    - "PROJ3"
+    - "SCRUM"
   
   # JQL filters for data retrieval
   jql_filters:

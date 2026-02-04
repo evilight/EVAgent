@@ -43,14 +43,21 @@ class ConfigLoader:
             config_content = file.read()
         
         # Substitute environment variables
-        config_content = self._substitute_env_vars(config_content)
+        try:
+            config_content = self._substitute_env_vars(config_content)
+        except Exception as e:
+            raise ValueError(f"Environment variable substitution failed in {config_path}: {e}")
         
         try:
             config = yaml.safe_load(config_content)
+            if config is None:
+                raise ValueError(f"Configuration file is empty or invalid: {config_path}")
+            
             self._config_cache[config_name] = config
             return config
         except yaml.YAMLError as e:
-            raise ValueError(f"Invalid YAML in {config_path}: {e}")
+            # Provide more detailed error information
+            raise ValueError(f"Invalid YAML in {config_path}: {e}\n\nContent after substitution:\n{config_content}")
     
     def _substitute_env_vars(self, content: str) -> str:
         """
@@ -67,7 +74,25 @@ class ConfigLoader:
         def replace_env_var(match):
             var_name = match.group(1)
             default_value = match.group(2) if match.group(2) else ""
-            return os.getenv(var_name, default_value)
+            env_value = os.getenv(var_name, default_value)
+            
+            # Clean up the environment value
+            if env_value:
+                # Remove surrounding quotes if they exist
+                env_value = env_value.strip()
+                if (env_value.startswith('"') and env_value.endswith('"')) or \
+                   (env_value.startswith("'") and env_value.endswith("'")):
+                    env_value = env_value[1:-1]
+                
+                # Only add quotes if the value contains special YAML characters
+                # and isn't already quoted in the YAML
+                if any(char in env_value for char in [':', '#', '[', ']', '{', '}', '|', '>', '@', '`', '*', '&', '!', '%', '\n']):
+                    # Check if the YAML already has quotes around this placeholder
+                    yaml_context = content[match.start()-10:match.end()+10]
+                    if not (yaml_context.count('"') >= 2 or yaml_context.count("'") >= 2):
+                        env_value = yaml.safe_dump(env_value, default_style='"').strip()
+            
+            return env_value or ""
         
         # Replace ${VAR_NAME} and ${VAR_NAME:default} patterns
         pattern = r'\$\{([^}:]+)(?::([^}]*))?\}'

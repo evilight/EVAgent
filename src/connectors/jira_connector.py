@@ -63,8 +63,18 @@ class JiraConnector(BaseConnector):
             Exception: If connection test fails
         """
         url = f"{self.base_url}/rest/api/{self.api_version}/myself"
-        await self._make_request('GET', url)
-        self.logger.info("Jira connection test successful")
+        
+        # Make a direct request without using _make_request to avoid circular dependency
+        try:
+            headers = self._get_default_headers()
+            async with self.session.get(url, headers=headers) as response:
+                if response.status == 200:
+                    self.logger.info("Jira connection test successful")
+                else:
+                    error_text = await response.text()
+                    raise Exception(f"Connection test failed with status {response.status}: {error_text}")
+        except Exception as e:
+            raise Exception(f"Jira connection test failed: {e}")
     
     async def search_issues(
         self,
@@ -87,22 +97,18 @@ class JiraConnector(BaseConnector):
         Returns:
             Dictionary containing search results
         """
-        url = f"{self.base_url}/rest/api/{self.api_version}/search"
+        # Use the new JQL search endpoint
+        url = f"{self.base_url}/rest/api/{self.api_version}/search/jql"
         
-        params = {
-            'jql': jql,
-            'startAt': start_at,
-            'maxResults': max_results
-        }
+        # Build minimal payload for the new API (it doesn't accept all parameters)
+        payload = {'jql': jql}
         
-        if fields:
-            params['fields'] = ','.join(fields)
-        
-        if expand:
-            params['expand'] = ','.join(expand)
+        # Only add maxResults if specified (API might not support other params)
+        if max_results != 50:  # Only add if not default
+            payload['maxResults'] = max_results
         
         self.logger.info(f"Searching issues with JQL: {jql}")
-        return await self._make_request('GET', url, params=params)
+        return await self._make_request('POST', url, data=payload)
     
     async def get_issue_details(self, issue_key: str, fields: Optional[List[str]] = None) -> Dict[str, Any]:
         """

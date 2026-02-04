@@ -6,6 +6,7 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
+import aiohttp
 from aiohttp import ClientSession, ClientResponse
 from ..utils.rate_limiter import RateLimiter
 

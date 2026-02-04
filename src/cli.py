@@ -28,7 +28,7 @@ def cli(ctx, config_dir: str, log_level: str):
     ctx.obj['log_level'] = log_level
     
     # Setup logging
-    logger = setup_logger('evagent_cli', level=getattr(logging, log_level.upper()))
+    logger = setup_logger('evagent_cli', log_level=log_level.upper())
     ctx.obj['logger'] = logger
 
 
