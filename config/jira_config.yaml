@@ -1,0 +1,44 @@
+jira:
+  url: "https://your-company.atlassian.net"
+  username: "${JIRA_USERNAME}"
+  api_token: "${JIRA_API_TOKEN}"
+  
+  # Projects to monitor
+  projects:
+    - "PROJ1"
+    - "PROJ2"
+    - "PROJ3"
+  
+  # JQL filters for data retrieval
+  jql_filters:
+    - "status in (Open, 'In Progress', Reopened)"
+    - "type in (Bug, Task, Story, 'Technical Task')"
+    - "priority in (High, Highest, Critical)"
+  
+  # Sync settings
+  sync:
+    interval: 3600  # seconds
+    batch_size: 50
+    max_retries: 3
+    retry_delay: 5  # seconds
+  
+  # API settings
+  api:
+    version: "3"
+    timeout: 30
+    max_results_per_call: 100
+  
+  # Attachment settings
+  attachments:
+    download: true
+    max_file_size: 50MB
+    allowed_types:
+      - "image/*"
+      - "text/*"
+      - "application/pdf"
+      - "application/json"
+      - "application/xml"
+      - "text/plain"
+      - "text/csv"
+      - "application/vnd.ms-excel"
+      - "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

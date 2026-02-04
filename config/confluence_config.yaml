@@ -1,0 +1,54 @@
+confluence:
+  url: "https://your-company.atlassian.net/wiki"
+  username: "${CONFLUENCE_USERNAME}"
+  api_token: "${CONFLUENCE_API_TOKEN}"
+  
+  # Spaces to monitor
+  spaces:
+    - "DEV"
+    - "TECH"
+    - "DOCS"
+    - "API"
+  
+  # Page filters
+  page_filters:
+    - "status = current"
+    - "type in (page, blogpost)"
+  
+  # Sync settings
+  sync:
+    interval: 7200  # seconds (2 hours)
+    batch_size: 25
+    max_retries: 3
+    retry_delay: 10  # seconds
+  
+  # API settings
+  api:
+    version: "2"
+    timeout: 30
+    max_results_per_call: 50
+    include_archived: false
+  
+  # Attachment settings
+  attachments:
+    download: true
+    max_file_size: 50MB
+    allowed_types:
+      - "image/*"
+      - "text/*"
+      - "application/pdf"
+      - "application/json"
+      - "application/xml"
+      - "text/plain"
+      - "text/csv"
+      - "application/vnd.ms-excel"
+      - "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      - "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  
+  # Content processing
+  processing:
+    preserve_formatting: true
+    extract_code_blocks: true
+    extract_links: true
+    chunk_size: 1000
+    chunk_overlap: 200

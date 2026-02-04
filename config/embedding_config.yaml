@@ -1,0 +1,68 @@
+embeddings:
+  # Text embedding model
+  text_model: "sentence-transformers/all-MiniLM-L6-v2"
+  
+  # Code embedding model (for code blocks)
+  code_model: "microsoft/codebert-base"
+  
+  # Image embedding model (for screenshots, diagrams)
+  image_model: "openai/clip-vit-base-patch32"
+  
+  # Embedding dimensions
+  embedding_dim: 384
+  
+  # Model settings
+  settings:
+    # Enable image embeddings (requires PIL and transformers)
+    enable_image_embeddings: true
+    
+    # Batch processing size
+    batch_size: 32
+    
+    # Maximum sequence length for text models
+    max_sequence_length: 512
+    
+    # Normalization settings
+    normalize_embeddings: true
+    
+    # Cache settings
+    cache_embeddings: true
+    cache_dir: "./storage/embedding_cache"
+  
+  # Multi-modal settings
+  multimodal:
+    # Weight for combining different modalities
+    text_weight: 0.7
+    image_weight: 0.2
+    code_weight: 0.1
+    
+    # Maximum number of code blocks to process per document
+    max_code_blocks: 5
+    
+    # Image processing settings
+    image:
+      max_size: 1024  # Maximum image dimension
+      resize_mode: "keep_aspect"
+  
+  # Performance settings
+  performance:
+    # Number of worker threads for embedding generation
+    num_workers: 4
+    
+    # GPU settings
+    use_gpu: true
+    gpu_memory_fraction: 0.8
+    
+    # Model loading
+    lazy_loading: true
+    
+  # Quality settings
+  quality:
+    # Minimum text length for embedding
+    min_text_length: 10
+    
+    # Maximum text length (will be truncated)
+    max_text_length: 8000
+    
+    # Skip empty embeddings
+    skip_empty: true
