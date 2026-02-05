@@ -1,0 +1,173 @@
+{
+  "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+  "id": "10004",
+  "self": "https://evilight.atlassian.net/rest/api/3/issue/10004",
+  "key": "SCRUM-5",
+  "fields": {
+    "statuscategorychangedate": "2026-02-04T22:45:04.838+0800",
+    "issuetype": {
+      "self": "https://evilight.atlassian.net/rest/api/3/issuetype/10004",
+      "id": "10004",
+      "description": "Stories track functionality or features expressed as user goals.",
+      "iconUrl": "https://evilight.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10315?size=medium",
+      "name": "Story",
+      "subtask": false,
+      "avatarId": 10315,
+      "entityId": "bfa01b89-1cf1-431d-8543-b311c3543928",
+      "hierarchyLevel": 0
+    },
+    "components": [],
+    "timespent": null,
+    "timeoriginalestimate": null,
+    "project": {
+      "self": "https://evilight.atlassian.net/rest/api/3/project/10000",
+      "id": "10000",
+      "key": "SCRUM",
+      "name": "EVAgent",
+      "projectTypeKey": "software",
+      "simplified": true,
+      "avatarUrls": {
+        "48x48": "https://evilight.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10402",
+        "24x24": "https://evilight.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10402?size=small",
+        "16x16": "https://evilight.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10402?size=xsmall",
+        "32x32": "https://evilight.atlassian.net/rest/api/3/universal_avatar/view/type/project/avatar/10402?size=medium"
+      }
+    },
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "this is the desc for the first story"
+            }
+          ]
+        }
+      ]
+    },
+    "fixVersions": [],
+    "customfield_10033": null,
+    "aggregatetimespent": null,
+    "statusCategory": {
+      "self": "https://evilight.atlassian.net/rest/api/3/statuscategory/2",
+      "id": 2,
+      "key": "new",
+      "colorName": "blue-gray",
+      "name": "To Do"
+    },
+    "resolution": null,
+    "customfield_10015": null,
+    "timetracking": {},
+    "security": null,
+    "attachment": [],
+    "aggregatetimeestimate": null,
+    "resolutiondate": null,
+    "workratio": -1,
+    "summary": "the first story to work on",
+    "issuerestriction": {
+      "issuerestrictions": {},
+      "shouldDisplay": true
+    },
+    "watches": {
+      "self": "https://evilight.atlassian.net/rest/api/3/issue/SCRUM-5/watchers",
+      "watchCount": 0,
+      "isWatching": false
+    },
+    "lastViewed": "2026-02-04T22:46:35.808+0800",
+    "creator": {
+      "self": "https://evilight.atlassian.net/rest/api/3/user?accountId=557058%3Ae5cdb5c3-6605-4c38-b7eb-48818bf09012",
+      "accountId": "557058:e5cdb5c3-6605-4c38-b7eb-48818bf09012",
+      "emailAddress": "evilight@gmail.com",
+      "avatarUrls": {
+        "48x48": "https://secure.gravatar.com/avatar/0aa2eced772006301f76f6e0381d4391?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FE-6.png",
+        "24x24": "https://secure.gravatar.com/avatar/0aa2eced772006301f76f6e0381d4391?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FE-6.png",
+        "16x16": "https://secure.gravatar.com/avatar/0aa2eced772006301f76f6e0381d4391?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FE-6.png",
+        "32x32": "https://secure.gravatar.com/avatar/0aa2eced772006301f76f6e0381d4391?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FE-6.png"
+      },
+      "displayName": "evilight",
+      "active": true,
+      "timeZone": "Asia/Shanghai",
+      "accountType": "atlassian"
+    },
+    "subtasks": [],
+    "created": "2026-02-04T22:45:04.494+0800",
+    "customfield_10020": null,
+    "customfield_10021": null,
+    "reporter": {
+      "self": "https://evilight.atlassian.net/rest/api/3/user?accountId=557058%3Ae5cdb5c3-6605-4c38-b7eb-48818bf09012",
+      "accountId": "557058:e5cdb5c3-6605-4c38-b7eb-48818bf09012",
+      "emailAddress": "evilight@gmail.com",
+      "avatarUrls": {
+        "48x48": "https://secure.gravatar.com/avatar/0aa2eced772006301f76f6e0381d4391?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FE-6.png",
+        "24x24": "https://secure.gravatar.com/avatar/0aa2eced772006301f76f6e0381d4391?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FE-6.png",
+        "16x16": "https://secure.gravatar.com/avatar/0aa2eced772006301f76f6e0381d4391?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FE-6.png",
+        "32x32": "https://secure.gravatar.com/avatar/0aa2eced772006301f76f6e0381d4391?d=https%3A%2F%2Favatar-management--avatars.us-west-2.prod.public.atl-paas.net%2Finitials%2FE-6.png"
+      },
+      "displayName": "evilight",
+      "active": true,
+      "timeZone": "Asia/Shanghai",
+      "accountType": "atlassian"
+    },
+    "aggregateprogress": {
+      "progress": 0,
+      "total": 0
+    },
+    "priority": {
+      "self": "https://evilight.atlassian.net/rest/api/3/priority/3",
+      "iconUrl": "https://evilight.atlassian.net/images/icons/priorities/medium_new.svg",
+      "name": "Medium",
+      "id": "3"
+    },
+    "customfield_10001": null,
+    "labels": [],
+    "customfield_10016": null,
+    "environment": null,
+    "customfield_10019": "0|i0000v:",
+    "timeestimate": null,
+    "aggregatetimeoriginalestimate": null,
+    "versions": [],
+    "duedate": null,
+    "progress": {
+      "progress": 0,
+      "total": 0
+    },
+    "issuelinks": [],
+    "votes": {
+      "self": "https://evilight.atlassian.net/rest/api/3/issue/SCRUM-5/votes",
+      "votes": 0,
+      "hasVoted": false
+    },
+    "comment": {
+      "comments": [],
+      "self": "https://evilight.atlassian.net/rest/api/3/issue/10004/comment",
+      "maxResults": 0,
+      "total": 0,
+      "startAt": 0
+    },
+    "assignee": null,
+    "worklog": {
+      "startAt": 0,
+      "maxResults": 20,
+      "total": 0,
+      "worklogs": []
+    },
+    "updated": "2026-02-04T22:45:04.642+0800",
+    "status": {
+      "self": "https://evilight.atlassian.net/rest/api/3/status/10000",
+      "description": "",
+      "iconUrl": "https://evilight.atlassian.net/images/icons/statuses/generic.png",
+      "name": "To Do",
+      "id": "10000",
+      "statusCategory": {
+        "self": "https://evilight.atlassian.net/rest/api/3/statuscategory/2",
+        "id": 2,
+        "key": "new",
+        "colorName": "blue-gray",
+        "name": "To Do"
+      }
+    }
+  }
+}

@@ -15,14 +15,22 @@ class TestJiraConnector:
     
     @pytest.fixture
     def config(self):
-        """Test configuration."""
-        return {
-            'url': 'https://test.atlassian.net',
-            'username': 'test@example.com',
-            'api_token': 'test-token',
-            'api': {'version': '3'},
-            'timeout': 30
-        }
+        """Test configuration using actual jira_config.yaml."""
+        import os
+        from pathlib import Path
+        from src.utils import ConfigLoader
+        
+        # Skip test if environment variables are not set
+        if not os.getenv('JIRA_USERNAME') or not os.getenv('JIRA_API_TOKEN'):
+            pytest.skip("JIRA_USERNAME and JIRA_API_TOKEN environment variables not set")
+        
+        # Load actual configuration
+        config_path = Path(__file__).parent.parent.parent / "config"
+        loader = ConfigLoader(str(config_path))
+        jira_config_full = loader.load_config("jira_config")
+        
+        # Extract the jira section
+        return jira_config_full.get('jira', {})
     
     @pytest.fixture
     def jira_connector(self, config):
@@ -67,10 +75,11 @@ class TestJiraConnector:
         """Test connector initialization."""
         connector = JiraConnector(config)
         
-        assert connector.base_url == 'https://test.atlassian.net'
-        assert connector.username == 'test@example.com'
-        assert connector.api_token == 'test-token'
-        assert connector.api_version == '3'
+        # Test with actual config values
+        assert connector.base_url == config.get('url')
+        assert connector.username == config.get('username')
+        assert connector.api_token == config.get('api_token')
+        assert connector.api_version == config.get('api', {}).get('version', '3')
         assert not connector._is_connected
     
     def test_get_default_headers(self, jira_connector):
