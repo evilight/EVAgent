@@ -62,9 +62,21 @@ class ConfluenceConnector(BaseConnector):
         Raises:
             Exception: If connection test fails
         """
-        url = f"{self.base_url}/rest/api/{self.api_version}/user/current"
-        await self._make_request('GET', url)
-        self.logger.info("Confluence connection test successful")
+        # Use /rest/api/content without version (confirmed working)
+        url = f"{self.base_url}/rest/api/content"
+        
+        # Make a direct request without using _make_request to avoid circular dependency
+        try:
+            headers = self._get_default_headers()
+            params = {'limit': 1}
+            async with self.session.get(url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    self.logger.info("Confluence connection test successful")
+                else:
+                    error_text = await response.text()
+                    raise Exception(f"Connection test failed with status {response.status}: {error_text}")
+        except Exception as e:
+            raise Exception(f"Confluence connection test failed: {e}")
     
     async def search_pages(
         self,

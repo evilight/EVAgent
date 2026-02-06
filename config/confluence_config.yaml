@@ -1,5 +1,5 @@
 confluence:
-  url: "https://your-company.atlassian.net/wiki"
+  url: "https://evilight.atlassian.net/wiki"
   username: "${CONFLUENCE_USERNAME}"
   api_token: "${CONFLUENCE_API_TOKEN}"
   

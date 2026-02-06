@@ -1,0 +1,80 @@
+Confluence Test Results
+=======================
+
+Date: 2026-02-06
+Status: CONFLUENCE NOT AVAILABLE
+
+Findings
+--------
+1. API Discovery Results:
+   - URL: https://evilight.atlassian.net/wiki - All endpoints return 404
+   - URL: https://evilight.atlassian.net - Only /myself works (Jira user API)
+   - Confluence-specific endpoints (/spaces, /content, /search) all return 404
+
+2. Root Cause:
+   - The Atlassian account (evilight@gmail.com) does NOT have Confluence enabled
+   - Only Jira is available on this account
+   - When accessing Confluence endpoints, the API either:
+     * Returns 404 "null for uri" errors
+     * Redirects to Jira HTML interface
+
+3. Authentication:
+   - Credentials are valid (same as Jira)
+   - Username: evilight@gmail.com
+   - API Token: Working for Jira APIs
+   - BUT: Confluence service is not provisioned for this account
+
+Test Scripts Created
+--------------------
+1. test_confluence_auth.py - Authentication test
+2. test_confluence_discover.py - API endpoint discovery
+3. test_confluence_pages.py - Page fetching test (won't work without Confluence)
+
+Configuration Changes
+---------------------
+Updated: config/confluence_config.yaml
+- URL changed from https://evilight.atlassian.net/wiki to https://evilight.atlassian.net
+- Username/API Token use same environment variables as Jira
+
+Code Changes
+------------
+Updated: src/connectors/confluence_connector.py
+- Fixed circular dependency in _test_connection() method
+- Now makes direct HTTP request instead of using _make_request
+
+How to Enable Confluence
+------------------------
+To use these tests, you need:
+1. An Atlassian account with Confluence enabled
+2. Update CONFLUENCE_USERNAME and CONFLUENCE_API_TOKEN environment variables
+3. Update config/confluence_config.yaml with your Confluence URL:
+   - Typically: https://your-domain.atlassian.net/wiki
+   - Or: https://your-domain.atlassian.net (if using same domain)
+
+Test Commands
+-------------
+cd tests/simple
+set CONFLUENCE_USERNAME=your-email@example.com
+set CONFLUENCE_API_TOKEN=your-api-token
+python test_confluence_auth.py
+python test_confluence_pages.py
+
+Expected Output (when Confluence is enabled):
+- test_confluence_auth.py:
+  === Confluence Authentication Test ===
+  Username: xxx
+  Loaded configuration:
+    URL: https://xxx.atlassian.net/wiki
+  SUCCESS: Connection established!
+  Connected as user: Your Name
+
+- test_confluence_pages.py:
+  === Confluence Pages Test ===
+  Connection successful!
+  Found X spaces:
+    - SPACEKEY: Space Name
+  Fetching pages from space: SPACEKEY
+  Found 3 pages:
+  1. Page Title
+     ID: xxx
+     ...
