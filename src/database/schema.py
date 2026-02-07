@@ -103,12 +103,27 @@ class DocumentSchema(BaseModel):
             data: Raw data dictionary
             
         Returns:
-            Validated data dictionary
+            Validated data dictionary with empty lists removed for ChromaDB compatibility
         """
         try:
             # Create model instance to validate
             validated = cls(**data)
-            return validated.dict()
+            result = validated.dict()
+            # Remove None values, empty lists and empty dicts for ChromaDB compatibility
+            # ChromaDB only accepts: str, int, float, bool
+            cleaned_result = {}
+            for k, v in result.items():
+                if v is None or v == [] or v == {}:
+                    continue
+                # Ensure value is a supported type
+                if isinstance(v, (str, int, float, bool)):
+                    cleaned_result[k] = v
+                elif isinstance(v, list) and v:
+                    # Convert list to comma-separated string for ChromaDB
+                    cleaned_result[k] = ', '.join(str(item) for item in v)
+                else:
+                    cleaned_result[k] = str(v)
+            return cleaned_result
         except Exception as e:
             # Log validation error but return cleaned data
             logger = logging.getLogger(cls.__name__)
@@ -152,12 +167,11 @@ class DocumentSchema(BaseModel):
         
         for field in list_fields:
             value = data.get(field)
-            if isinstance(value, list):
+            if isinstance(value, list) and value:  # Only include non-empty lists
                 cleaned[field] = [str(item) for item in value if item is not None]
-            elif value is not None:
+            elif value is not None and value != []:
                 cleaned[field] = [str(value)]
-            else:
-                cleaned[field] = []
+            # Skip empty lists - ChromaDB doesn't accept them
         
         # Numeric fields
         numeric_fields = ['attachment_count', 'comment_count', 'priority_score', 'recency_score']

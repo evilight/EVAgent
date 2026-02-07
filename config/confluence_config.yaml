@@ -5,10 +5,8 @@ confluence:
   
   # Spaces to monitor
   spaces:
-    - "DEV"
-    - "TECH"
-    - "DOCS"
-    - "API"
+    - "evilight"
+    - "Software Development"
   
   # Page filters
   page_filters:
