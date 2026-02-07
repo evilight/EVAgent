@@ -159,7 +159,7 @@ class DocumentSchema(BaseModel):
             if value is not None:
                 cleaned[field] = str(value)
         
-        # List fields
+        # List fields - convert to comma-separated string for ChromaDB
         list_fields = [
             'labels', 'components', 'fix_versions', 'affects_versions',
             'error_types', 'stack_traces', 'file_paths', 'class_names', 'urls', 'versions'
@@ -167,11 +167,11 @@ class DocumentSchema(BaseModel):
         
         for field in list_fields:
             value = data.get(field)
-            if isinstance(value, list) and value:  # Only include non-empty lists
-                cleaned[field] = [str(item) for item in value if item is not None]
-            elif value is not None and value != []:
-                cleaned[field] = [str(value)]
-            # Skip empty lists - ChromaDB doesn't accept them
+            if isinstance(value, list) and value:  # Convert non-empty list to string
+                cleaned[field] = ', '.join(str(item) for item in value if item is not None)
+            elif isinstance(value, str) and value:  # Already a string, keep as-is
+                cleaned[field] = value
+            # Skip empty values - ChromaDB doesn't accept them
         
         # Numeric fields
         numeric_fields = ['attachment_count', 'comment_count', 'priority_score', 'recency_score']
@@ -183,15 +183,14 @@ class DocumentSchema(BaseModel):
             except (ValueError, TypeError):
                 cleaned[field] = 0.0
         
-        # Dict fields
+        # Dict fields - only include if they have actual data
         dict_fields = ['custom_fields']
         
         for field in dict_fields:
             value = data.get(field)
-            if isinstance(value, dict):
+            if isinstance(value, dict) and value:  # Only include non-empty dicts
                 cleaned[field] = value
-            else:
-                cleaned[field] = {}
+            # Skip empty dicts - ChromaDB doesn't accept them
         
         return cleaned
 
