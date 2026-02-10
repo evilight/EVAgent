@@ -1,0 +1,24 @@
+{
+  "import_stats": {
+    "total_processed": 3,
+    "successful_imports": 2,
+    "failed_imports": 1,
+    "errors": [
+      "Failed to process document unknown: 'content_type'"
+    ],
+    "start_time": "2026-02-10T15:24:09.101380+00:00",
+    "end_time": "2026-02-10T15:24:09.434632+00:00",
+    "success_rate": 66.66666666666666
+  },
+  "knowledge_base_stats": {
+    "document_count": 11,
+    "file_count": 0,
+    "collection_name": "test_import",
+    "file_collection_name": "file_references",
+    "persist_directory": "./storage/test_import_manager",
+    "embedding_model": "d:\\EVAgent\\models\\all-MiniLM-L6-v2",
+    "chunk_size": 500,
+    "last_updated": "2026-02-10T15:24:09.439481+00:00"
+  },
+  "timestamp": "2026-02-10T15:24:09.439500+00:00"
+}

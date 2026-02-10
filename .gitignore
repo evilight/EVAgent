@@ -130,6 +130,9 @@ storage/temp/
 .DS_Store
 Thumbs.db
 
+# Models directory - exclude large model files
+models/all-MiniLM-L6-v2/
+
 # IDE
 .vscode/
 .idea/

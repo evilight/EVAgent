@@ -64,30 +64,143 @@ class EmbeddingService:
         self._load_models()
     
     def _load_models(self):
-        """Load embedding models."""
+        """Load embedding models with local-first approach."""
         try:
-            # Load text model
-            self.logger.info(f"Loading text model: {self.text_model_name}")
-            self.text_model = SentenceTransformer(self.text_model_name)
-            self.embedding_dim = self.text_model.get_sentence_embedding_dimension()
+            # Try local model first
+            if self._is_local_model(self.text_model_name):
+                self.logger.info(f"Loading local text model: {self.text_model_name}")
+                self.text_model = self._load_local_model(self.text_model_name)
+                self.embedding_dim = self.text_model.get_sentence_embedding_dimension()
+                self.logger.info("Local text model loaded successfully")
+            else:
+                # Fallback to online model
+                self.logger.info(f"Loading online text model: {self.text_model_name}")
+                self.text_model = SentenceTransformer(self.text_model_name)
+                self.embedding_dim = self.text_model.get_sentence_embedding_dimension()
+                self.logger.info("Online text model loaded successfully")
             
             # Load code model if different from text model
-            if self.code_model_name != self.text_model_name and TRANSFORMERS_AVAILABLE:
-                self.logger.info(f"Loading code model: {self.code_model_name}")
-                self.code_tokenizer = AutoTokenizer.from_pretrained(self.code_model_name)
-                self.code_model = AutoModel.from_pretrained(self.code_model_name)
+            if (self.code_model_name and 
+                self.code_model_name != self.text_model_name and 
+                TRANSFORMERS_AVAILABLE):
+                if self._is_local_model(self.code_model_name):
+                    self.logger.info(f"Loading local code model: {self.code_model_name}")
+                    self.code_tokenizer = AutoTokenizer.from_pretrained(
+                        self.code_model_name, local_files_only=True
+                    )
+                    self.code_model = AutoModel.from_pretrained(
+                        self.code_model_name, local_files_only=True
+                    )
+                else:
+                    self.logger.info(f"Loading online code model: {self.code_model_name}")
+                    self.code_tokenizer = AutoTokenizer.from_pretrained(self.code_model_name)
+                    self.code_model = AutoModel.from_pretrained(self.code_model_name)
             
             # Load image model if available
-            if CLIP_AVAILABLE and self.config.get('enable_image_embeddings', True):
-                self.logger.info(f"Loading image model: {self.image_model_name}")
-                self.image_model = CLIPModel.from_pretrained(self.image_model_name)
-                self.clip_processor = CLIPProcessor.from_pretrained(self.image_model_name)
+            if (CLIP_AVAILABLE and 
+                self.config.get('enable_image_embeddings', True) and
+                self.image_model_name):
+                if self._is_local_model(self.image_model_name):
+                    self.logger.info(f"Loading local image model: {self.image_model_name}")
+                    self.image_model = CLIPModel.from_pretrained(
+                        self.image_model_name, local_files_only=True
+                    )
+                    self.clip_processor = CLIPProcessor.from_pretrained(
+                        self.image_model_name, local_files_only=True
+                    )
+                else:
+                    self.logger.info(f"Loading online image model: {self.image_model_name}")
+                    self.image_model = CLIPModel.from_pretrained(self.image_model_name)
+                    self.clip_processor = CLIPProcessor.from_pretrained(self.image_model_name)
             
-            self.logger.info("Embedding models loaded successfully")
+            self.logger.info("All embedding models loaded successfully")
             
         except Exception as e:
             self.logger.error(f"Failed to load embedding models: {e}")
-            raise
+            # Try fallback for text model
+            if self.text_model is None:
+                self.logger.info("Attempting fallback to online model...")
+                try:
+                    self.text_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+                    self.embedding_dim = self.text_model.get_sentence_embedding_dimension()
+                    self.logger.info("Fallback online model loaded successfully")
+                except Exception as fallback_error:
+                    self.logger.error(f"Fallback also failed: {fallback_error}")
+                    raise
+            else:
+                raise
+    
+    def _is_local_model(self, model_path: str) -> bool:
+        """Check if model path is a local directory."""
+        if model_path is None:
+            return False
+        import os
+        from pathlib import Path
+        return os.path.exists(model_path) and Path(model_path).is_dir()
+    
+    def _load_local_model(self, model_path: str) -> SentenceTransformer:
+        """Load SentenceTransformer model from local path."""
+        try:
+            # First try with SentenceTransformer
+            model = SentenceTransformer(model_path)
+            return model
+        except Exception as e:
+            self.logger.warning(f"SentenceTransformer failed to load local model: {e}")
+            # Fallback to transformers approach
+            if TRANSFORMERS_AVAILABLE:
+                return self._load_local_with_transformers(model_path)
+            else:
+                raise ImportError("transformers library not available for fallback loading")
+    
+    def _load_local_with_transformers(self, model_path: str) -> Any:
+        """Load model using transformers library as fallback."""
+        from transformers import AutoTokenizer, AutoModel
+        import torch
+        
+        class LocalEmbeddingModel:
+            """Wrapper for local model loaded with transformers."""
+            
+            def __init__(self, model_path: str):
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    model_path, local_files_only=True, trust_remote_code=False
+                )
+                self.model = AutoModel.from_pretrained(
+                    model_path, local_files_only=True, trust_remote_code=False
+                )
+                self.model.eval()
+            
+            def get_sentence_embedding_dimension(self) -> int:
+                """Get embedding dimension from model config."""
+                return self.model.config.hidden_size
+            
+            def encode(self, sentences, batch_size=32, show_progress_bar=False, **kwargs):
+                """Encode sentences to embeddings."""
+                if isinstance(sentences, str):
+                    sentences = [sentences]
+                
+                embeddings = []
+                for i in range(0, len(sentences), batch_size):
+                    batch = sentences[i:i + batch_size]
+                    
+                    # Tokenize
+                    inputs = self.tokenizer(
+                        batch, 
+                        padding=True, 
+                        truncation=True, 
+                        max_length=512,
+                        return_tensors='pt'
+                    )
+                    
+                    # Generate embeddings
+                    with torch.no_grad():
+                        outputs = self.model(**inputs)
+                        # Mean pooling
+                        batch_embeddings = outputs.last_hidden_state.mean(dim=1)
+                        embeddings.extend(batch_embeddings.cpu().numpy())
+                
+                return np.array(embeddings)
+        
+        return LocalEmbeddingModel(model_path)
     
     async def embed_text(
         self,
