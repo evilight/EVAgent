@@ -5,14 +5,20 @@ This module provides LangChain-compatible document loaders
 for loading data from Jira and Confluence into the RAG system.
 """
 
+import os
+import sys
 from typing import Any, Dict, Iterator, List, Optional
 import logging
 
 from langchain_core.document_loaders import BaseLoader
 from langchain_core.documents import Document
 
-from src.connectors import JiraConnector, ConfluenceConnector
-from src.utils import ConfigLoader
+# Add EVAgent src to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from connectors.jira_connector import JiraConnector
+from connectors.confluence_connector import ConfluenceConnector
+from utils.config_loader import ConfigLoader
 
 logger = logging.getLogger(__name__)
 

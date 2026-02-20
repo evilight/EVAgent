@@ -2,6 +2,8 @@
 Confluence connector for fetching pages, content, and attachments.
 """
 
+import os
+import sys
 import asyncio
 import base64
 import logging
@@ -9,8 +11,11 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 from urllib.parse import urljoin, quote
 
+# Add EVAgent src to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from .base_connector import BaseConnector
-from ..utils.rate_limiter import RateLimiter
+from utils.rate_limiter import RateLimiter
 
 
 class ConfluenceConnector(BaseConnector):

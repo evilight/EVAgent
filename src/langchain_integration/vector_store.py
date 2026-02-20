@@ -5,6 +5,8 @@ This module provides a LangChain VectorStore interface for our ChromaManager,
 enabling seamless integration with LangChain chains and retrieval systems.
 """
 
+import os
+import sys
 from typing import Any, Dict, List, Optional, Tuple, Iterable
 import numpy as np
 import logging
@@ -13,7 +15,10 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 
-from src.database import ChromaManager
+# Add EVAgent src to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from database.chroma_manager import ChromaManager
 
 logger = logging.getLogger(__name__)
 

@@ -2,13 +2,19 @@
 Base connector class for all data source connectors.
 """
 
+import os
+import sys
 import asyncio
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 import aiohttp
 from aiohttp import ClientSession, ClientResponse
-from ..utils.rate_limiter import RateLimiter
+
+# Add EVAgent src to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.rate_limiter import RateLimiter
 
 
 class BaseConnector(ABC):

@@ -3,14 +3,19 @@ Knowledge base management for EVAgent RAG system.
 """
 
 import logging
+import os
+import sys
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime, timezone
 import uuid
 from pathlib import Path
 
-from ..database.chroma_manager import ChromaManager
-from ..embeddings.embedding_service import EmbeddingService
-from ..processors.document_processor import DocumentProcessor
+# Add EVAgent src to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from database.chroma_manager import ChromaManager
+from embeddings.embedding_service import EmbeddingService
+from processors.document_processor import DocumentProcessor
 
 logger = logging.getLogger(__name__)
 

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVAgent RAG System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: #2563eb;
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            min-height: 600px;
+        }
+        
+        .login-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .chat-section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .btn {
+            background: #2563eb;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            background: #1d4ed8;
+        }
+        
+        .btn:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            max-height: 400px;
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .user-message {
+            background: #e3f2fd;
+            text-align: right;
+        }
+        
+        .assistant-message {
+            background: #f3f4f6;
+        }
+        
+        .input-area {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            border-top: 1px solid #eee;
+        }
+        
+        .input-area input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            opacity: 0.6;
+        }
+        
+        @media (max-width: 768px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>EVAgent RAG System</h1>
+            <p id="status">Loading...</p>
+        </div>
+        
+        <div class="main">
+            <!-- Login Section -->
+            <div id="loginSection" class="login-section">
+                <h2>Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn">Login</button>
+                </form>
+                <div id="loginError" class="error hidden"></div>
+                <p><small>Default: admin / admin123</small></p>
+            </div>
+            
+            <!-- Chat Section -->
+            <div id="chatSection" class="chat-section hidden">
+                <h2>Chat with EVAgent</h2>
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="input-area">
+                    <input type="text" id="messageInput" placeholder="Ask EVAgent a question..." disabled>
+                    <button id="sendButton" class="btn" disabled>Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('token');
+        let currentUser = null;
+        
+        // Check authentication status
+        async function checkAuth() {
+            if (authToken) {
+                try {
+                    const response = await fetch('/api/v1/auth/me', {
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        currentUser = data.username;
+                        showChatInterface();
+                        updateStatus(`Welcome, ${currentUser}!`);
+                    } else {
+                        logout();
+                    }
+                } catch (error) {
+                    console.error('Auth check failed:', error);
+                    logout();
+                }
+            } else {
+                showLoginInterface();
+                updateStatus('Please login to continue');
+            }
+        }
+        
+        // Show login interface
+        function showLoginInterface() {
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('chatSection').classList.add('hidden');
+        }
+        
+        // Show chat interface
+        function showChatInterface() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('chatSection').classList.remove('hidden');
+        }
+        
+        // Update status message
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        // Login function
+        async function login(username, password) {
+            const loginForm = document.getElementById('loginForm');
+            const loginButton = loginForm.querySelector('button[type="submit"]');
+            const errorDiv = document.getElementById('loginError');
+            
+            loginButton.disabled = true;
+            loginButton.classList.add('loading');
+            loginButton.textContent = 'Logging in...';
+            errorDiv.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Basic ${btoa(`${username}:${password}`)}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.access_token) {
+                    authToken = data.access_token;
+                    localStorage.setItem('token', authToken);
+                    currentUser = username;
+                    showChatInterface();
+                    updateStatus(`Welcome, ${username}!`);
+                } else {
+                    throw new Error('Login failed');
+                }
+            } catch (error) {
+                errorDiv.textContent = error.message || 'Login failed';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                loginButton.disabled = false;
+                loginButton.classList.remove('loading');
+                loginButton.textContent = 'Login';
+            }
+        }
+        
+        // Send message function
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const chatMessages = document.getElementById('chatMessages');
+            
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            sendButton.disabled = true;
+            sendButton.classList.add('loading');
+            sendButton.textContent = 'Sending...';
+            messageInput.disabled = true;
+            
+            try {
+                const response = await fetch('/api/v1/chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        message: message
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Add user message
+                const userMsgDiv = document.createElement('div');
+                userMsgDiv.className = 'message user-message';
+                userMsgDiv.innerHTML = `<strong>You:</strong> ${message}`;
+                chatMessages.appendChild(userMsgDiv);
+                
+                // Add assistant response
+                const assistantMsgDiv = document.createElement('div');
+                assistantMsgDiv.className = 'message assistant-message';
+                assistantMsgDiv.innerHTML = `<strong>EVAgent:</strong> ${data.answer}`;
+                chatMessages.appendChild(assistantMsgDiv);
+                
+                // Add sources if available
+                if (data.sources && data.sources.length > 0) {
+                    const sourcesDiv = document.createElement('div');
+                    sourcesDiv.style.marginTop = '0.5rem';
+                    sourcesDiv.style.fontSize = '0.9rem';
+                    sourcesDiv.style.color = '#666';
+                    sourcesDiv.innerHTML = '<strong>Sources:</strong><br>' + 
+                        data.sources.map(source => `• ${source.title} (${(source.score * 100).toFixed(1)}%)`).join('<br>');
+                    chatMessages.appendChild(sourcesDiv);
+                }
+                
+                messageInput.value = '';
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+            } catch (error) {
+                console.error('Send message error:', error);
+                alert('Failed to send message: ' + error.message);
+            } finally {
+                sendButton.disabled = false;
+                sendButton.classList.remove('loading');
+                sendButton.textContent = 'Send';
+                messageInput.disabled = false;
+            }
+        }
+        
+        // Logout function
+        function logout() {
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('token');
+            showLoginInterface();
+            updateStatus('Logged out');
+        }
+        
+        // Event listeners
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            await login(username, password);
+        });
+        
+        document.getElementById('sendButton').addEventListener('click', sendMessage);
+        
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Add logout button
+        const logoutBtn = document.createElement('button');
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.className = 'btn';
+        logoutBtn.style.marginTop = '1rem';
+        logoutBtn.onclick = logout;
+        
+        // Initialize
+        checkAuth();
+        
+        // Add logout button to chat section
+        document.getElementById('chatSection').appendChild(logoutBtn);
+    </script>
+</body>
+</html>
