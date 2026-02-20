@@ -18,7 +18,7 @@ def test_api():
     print(f"\nLogin: {resp.status_code}")
     if resp.status_code == 200:
         token = resp.json().get("access_token")
-        print(f"✅ Got token: {token[:30]}...")
+        print(f"[OK] Got token: {token[:30]}...")
         headers = {"Authorization": f"Bearer {token}"}
         
         # Test stats
@@ -26,34 +26,34 @@ def test_api():
         resp = requests.get(f"{BASE_URL}/api/v1/system/stats", headers=headers)
         if resp.status_code == 200:
             stats = resp.json()
-            print(f"✅ Documents: {stats.get('total_documents', 0)}")
-            print(f"✅ Embedding model: {stats.get('model_info', {}).get('embedding_model', 'unknown')}")
+            print(f"[OK] Documents: {stats.get('total_documents', 0)}")
+            print(f"[OK] Embedding model: {stats.get('model_info', {}).get('embedding_model', 'unknown')}")
         else:
-            print(f"❌ Stats failed: {resp.status_code}")
+            print(f"[FAIL] Stats failed: {resp.status_code}")
         
         # Test search
         print("\n--- Search Test ---")
         resp = requests.post(f"{BASE_URL}/api/v1/search/", headers=headers, json={"query": "test"})
         if resp.status_code == 200:
             results = resp.json()
-            print(f"✅ Search returned {results.get('total', 0)} results")
-            for i, result in enumerate(results.get('results', [])[:2]:
+            print(f"[OK] Search returned {results.get('total', 0)} results")
+            for i, result in enumerate(results.get('results', [])[:2]):
                 print(f"   Result {i+1}: {result.get('title', 'No title')[:50]}...")
         else:
-            print(f"❌ Search failed: {resp.status_code} - {resp.text}")
+            print(f"[FAIL] Search failed: {resp.status_code} - {resp.text}")
         
         # Test chat
         print("\n--- Chat Test ---")
         resp = requests.post(f"{BASE_URL}/api/v1/chat/", headers=headers, json={"message": "What can you tell me about this system?"})
         if resp.status_code == 200:
             chat = resp.json()
-            print(f"✅ Chat response: {chat.get('answer', 'No answer')[:100]}...")
+            print(f"[OK] Chat response: {chat.get('answer', 'No answer')[:100]}...")
             print(f"   Sources: {len(chat.get('sources', []))}")
         else:
-            print(f"❌ Chat failed: {resp.status_code} - {resp.text}")
+            print(f"[FAIL] Chat failed: {resp.status_code} - {resp.text}")
             
     else:
-        print(f"❌ Login failed: {resp.status_code} - {resp.text}")
+        print(f"[FAIL] Login failed: {resp.status_code} - {resp.text}")
     
     print("\n" + "=" * 60)
     print("Test completed!")
