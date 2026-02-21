@@ -12,15 +12,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<string | null>(null);
   
   const login = (newToken: string) => {
+    console.log('🔍 AuthContext: Received new token:', newToken.substring(0, 20) + '...');
     setToken(newToken);
     localStorage.setItem('token', newToken);
     
     // Decode token to get user info
     try {
       const payload = JSON.parse(atob(newToken.split('.')[1]));
+      console.log('🔍 AuthContext: Decoded payload:', payload);
       setUser(payload.sub);
     } catch (error) {
-      console.error('Error decoding token:', error);
+      console.error('❌ AuthContext: Error decoding token:', error);
     }
   };
   

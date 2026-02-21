@@ -150,7 +150,7 @@ class KnowledgeBase:
         results = self.chroma_manager.search(
             query_embedding=query_embedding[0],
             n_results=n_results,
-            where=filters,
+            where=filters if filters else None,
             include=['metadatas', 'documents', 'distances']
         )
         

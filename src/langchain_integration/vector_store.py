@@ -208,21 +208,48 @@ class ChromaLangChainVectorStore(VectorStore):
         except RuntimeError:
             # No event loop running, use asyncio.run directly
             query_embedding = asyncio.run(self.embedding_service.embed_text(query))[0]
+        except Exception as e:
+            logger.error(f"Error generating query embedding: {e}")
+            return []
+        
+        logger.info(f"Query embedding generated successfully, shape: {len(query_embedding) if query_embedding else 0}")
         
         # Search in ChromaDB
-        results = self.chroma_manager.search(
-            query_embedding=query_embedding,
-            n_results=k,
-            where=filter,
-            include=['metadatas', 'documents', 'distances']
-        )
+        try:
+            results = self.chroma_manager.search(
+                query_embedding=query_embedding,
+                n_results=k,
+                where=filter,
+                include=['metadatas', 'documents', 'distances']
+            )
+            logger.info(f"ChromaDB search completed, found {len(results.get('ids', []))} results")
+        except Exception as e:
+            logger.error(f"ChromaDB search error: {e}")
+            return []
         
         # Convert to LangChain Documents
         documents = []
         for i, doc_id in enumerate(results['ids']):
             content = results['documents'][i] if i < len(results['documents']) else ""
             metadata = results['metadatas'][i] if i < len(results['metadatas']) else {}
-            similarity = results['similarities'][i] if i < len(results['similarities']) else 0.0
+            
+            # ChromaDB returns distances, debug the actual values
+            distance = results['distances'][i] if i < len(results['distances']) else 1.0
+            logger.info(f"ChromaDB distance: {distance}")
+            
+            # For cosine distance, similarity = 1 - distance
+            # But need to handle different distance metrics properly
+            if distance <= 0:
+                similarity = 1.0  # Perfect match
+            elif distance <= 1:
+                similarity = 1.0 - distance  # Cosine distance
+            elif distance <= 2:
+                similarity = 2.0 - distance  # Euclidean distance normalized
+            else:
+                similarity = 0.0  # Too far
+            
+            similarity = max(0.0, min(1.0, similarity))  # Clamp to [0,1]
+            logger.info(f"Converted similarity: {similarity}")
             
             # Add similarity to metadata
             metadata = {**metadata, 'similarity': similarity, 'id': doc_id}

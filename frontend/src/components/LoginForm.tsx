@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import apiService from '../services/api';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import apiService from '../services/api';
 
 const LoginForm: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -8,16 +9,27 @@ const LoginForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const navigate = useNavigate();
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     
+    console.log('🔍 LoginForm: Submitting login form');
+    console.log('🔍 Username:', username);
+    console.log('🔍 Password:', password.replace(/./g, '*'));
+    
     try {
       const response = await apiService.login(username, password);
+      console.log('🔍 Login response:', response);
       login(response.access_token);
+      
+      // Redirect to dashboard after successful login
+      console.log('🔍 Redirecting to dashboard...');
+      navigate('/');
     } catch (error: any) {
+      console.error('❌ LoginForm error:', error);
       setError(error.message || 'Login failed');
     } finally {
       setIsLoading(false);

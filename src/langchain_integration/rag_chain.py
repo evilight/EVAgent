@@ -7,6 +7,7 @@ combining vector search with LLM generation for question answering.
 
 import logging
 import re
+import numpy as np
 from typing import Any, Dict, List, Optional, Callable
 from datetime import datetime, timezone
 
@@ -82,7 +83,7 @@ Answer:"""
         system_prompt: Optional[str] = None,
         qa_prompt: Optional[str] = None,
         search_k: int = 5,
-        similarity_threshold: float = 0.7,
+        similarity_threshold: float = 0.0,  # Disable threshold temporarily
         enable_hybrid_search: bool = True,
         enable_query_expansion: bool = True
     ):
@@ -151,8 +152,18 @@ Answer:"""
             similarity = doc.metadata.get('similarity', 0)
             
             # Skip duplicates and low similarity
-            if (content_hash not in seen_content and 
-                similarity >= self.similarity_threshold):
+            content_not_seen = content_hash not in seen_content
+            similarity_high_enough = similarity >= self.similarity_threshold
+            
+            # Debug logging
+            if isinstance(similarity, (list, tuple, np.ndarray)):
+                logger.error(f"Similarity is array-like: {similarity}, type: {type(similarity)}")
+                similarity = float(similarity[0] if len(similarity) > 0 else 0.0)
+                similarity_high_enough = similarity >= self.similarity_threshold
+            
+            logger.info(f"Doc similarity: {similarity:.3f}, threshold: {self.similarity_threshold}, result: {similarity_high_enough}")
+            
+            if content_not_seen and similarity_high_enough:
                 seen_content.add(content_hash)
                 retrieved_docs.append(doc)
         
@@ -272,7 +283,24 @@ Answer:"""
             return self.vector_store.similarity_search(question, k=k, filter=filters)
         
         # Semantic search
+        logger.info(f"Starting semantic search for: '{question}'")
         semantic_docs = self.vector_store.similarity_search(question, k=k, filter=filters)
+        logger.info(f"Semantic search found {len(semantic_docs)} documents")
+        
+        # Log similarity scores for debugging
+        for i, doc in enumerate(semantic_docs[:3]):
+            similarity = doc.metadata.get('similarity', 0.0)
+            logger.info(f"  Doc {i+1}: similarity={similarity:.3f}, threshold={self.similarity_threshold}")
+            logger.info(f"  Doc {i+1} content preview: {doc.page_content[:100]}...")
+        
+        # Filter by similarity threshold
+        filtered_docs = [doc for doc in semantic_docs if doc.metadata.get('similarity', 0.0) >= self.similarity_threshold]
+        logger.info(f"After filtering by threshold {self.similarity_threshold}: {len(filtered_docs)} documents")
+        
+        # If no docs pass threshold, return empty list
+        if not filtered_docs:
+            logger.warning("No documents passed similarity threshold filter")
+            return []
         
         # Keyword search (simple implementation)
         keywords = self._extract_keywords(question)

@@ -24,30 +24,50 @@ class APIService {
   
   async login(username: string, password: string): Promise<LoginResponse> {
     try {
+      console.log('🔍 Login attempt:', { username, password: '***' });
+      console.log('🔍 API URL:', `${API_BASE_URL}/auth/login`);
+      
       const response = await axios.post<LoginResponse>(
         `${API_BASE_URL}/auth/login`,
-        {},
+        {
+          username: username,
+          password: password
+        },
         {
           headers: {
-            'Authorization': `Basic ${btoa(`${username}:${password}`)}`
+            'Content-Type': 'application/json'
           }
         }
       );
       
-      if (response.data.access_token) {
+      console.log('🔍 Raw response:', response);
+      console.log('🔍 Response status:', response.status);
+      console.log('🔍 Response data:', response.data);
+      console.log('🔍 Response headers:', response.headers);
+      
+      if (response.data && response.data.access_token) {
         this.token = response.data.access_token;
         localStorage.setItem('token', this.token);
+        console.log('🔍 Token saved:', this.token.substring(0, 20) + '...');
+        return response.data;
+      } else {
+        console.error('❌ Invalid response format:', response);
+        throw new Error('Login failed - invalid response format');
       }
-      
-      return response.data;
     } catch (error: any) {
-      console.error('Login error:', error);
-      throw new Error(error.response?.data?.detail || 'Login failed');
+      console.error('❌ Login error:', error);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error message:', error.message);
+      throw new Error(error.response?.data?.detail || error.message || 'Login failed');
     }
   }
   
   async sendMessage(request: ChatRequest): Promise<ChatResponse> {
     try {
+      console.log('🔍 Chat request:', request);
+      console.log('🔍 Request headers:', this.getHeaders());
+      
       const response = await axios.post<ChatResponse>(
         `${API_BASE_URL}/chat/`,
         request,
@@ -56,6 +76,10 @@ class APIService {
         }
       );
       
+      console.log('🔍 Chat response status:', response.status);
+      console.log('🔍 Chat response headers:', response.headers);
+      console.log('🔍 Chat response data:', response.data);
+      
       if (response.status === 401) {
         this.logout();
         throw new Error('Authentication required');
@@ -63,12 +87,17 @@ class APIService {
       
       return response.data;
     } catch (error: any) {
-      console.error('Send message error:', error);
+      console.error('❌ Chat error:', error);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error config:', error.config);
+      
       if (error.response?.status === 401) {
         this.logout();
         throw new Error('Authentication required');
       }
-      throw new Error(error.response?.data?.detail || 'Failed to send message');
+      throw new Error(error.response?.data?.detail || error.message || 'Failed to send message');
     }
   }
   

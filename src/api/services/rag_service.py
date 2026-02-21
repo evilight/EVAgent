@@ -3,6 +3,7 @@ RAG service for EVAgent system with authentication support.
 """
 
 import logging
+import numpy as np
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
 import uuid
@@ -21,13 +22,21 @@ class RAGService:
     def __init__(self):
         """Initialize RAG service."""
         # Initialize components
-        self.knowledge_base = KnowledgeBase({
-            'persist_directory': './storage/rag_api_db',
-            'collection_name': 'evagent_api',
+        kb_config = {
+            'persist_directory': './storage/rag_sample_db',
+            'collection_name': 'evagent_sample',
             'text_model': 'd:\\EVAgent\\models\\all-MiniLM-L6-v2',
             'chunk_size': 300,
             'chunk_overlap': 30
-        })
+        }
+        
+        logger.info(f"Initializing RAG service with config: {kb_config}")
+        print(f"*** RAG SERVICE INITIALIZING WITH: {kb_config} ***")
+        self.knowledge_base = KnowledgeBase(kb_config)
+        
+        # Get stats to verify
+        stats = self.knowledge_base.get_stats()
+        logger.info(f"Knowledge base stats after init: {stats}")
         
         self.llm_manager = LLMManager()
         self.vector_store = ChromaLangChainVectorStore(
@@ -77,11 +86,18 @@ class RAGService:
                 chat_history = await self.get_conversation_history(conversation_id, user_context.get("username"))
             
             # Process with RAG chain
-            result = await self.rag_chain.ask(
-                question=question,
-                filters=search_filters,
-                chat_history=chat_history
-            )
+            try:
+                logger.info(f"About to call RAG chain with question: {question[:50]}...")
+                result = await self.rag_chain.ask(
+                    question=question,
+                    filters=search_filters,
+                    chat_history=chat_history
+                )
+                logger.info(f"RAG chain completed successfully with result type: {type(result)}")
+                return result
+            except Exception as e:
+                logger.error(f"RAG ask error: {e}")
+                raise
             
             # Store conversation if conversation_id provided
             if conversation_id:
@@ -111,7 +127,7 @@ class RAGService:
         query: str,
         filters: Optional[Dict[str, Any]] = None,
         limit: int = 10,
-        similarity_threshold: float = 0.7
+        similarity_threshold: float = 0.3
     ) -> List[Dict[str, Any]]:
         """
         Search documents.
@@ -133,10 +149,15 @@ class RAGService:
             )
             
             # Filter by similarity threshold
-            filtered_results = [
-                result for result in results
-                if result.get('score', 0) >= similarity_threshold
-            ]
+            filtered_results = []
+            for result in results:
+                score = result.get('score', 0)
+                # Handle case where score might be a list/array
+                if isinstance(score, (list, tuple, np.ndarray)):
+                    score = float(score[0] if len(score) > 0 else 0.0)
+                
+                if score >= similarity_threshold:
+                    filtered_results.append(result)
             
             return filtered_results[:limit]
             
