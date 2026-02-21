@@ -1,0 +1,20 @@
+# EVAgent Background Sync Service
+# systemd service file for Linux/macOS
+
+[Unit]
+Description=EVAgent Background Synchronization Service
+After=network.target
+
+[Service]
+Type=simple
+User=evagent
+WorkingDirectory=/opt/evagent
+Environment=PYTHONPATH=/opt/evagent
+ExecStart=/usr/bin/python3 /opt/evagent/background_sync_service.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

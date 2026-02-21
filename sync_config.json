@@ -1,0 +1,54 @@
+{
+  "sync_service": {
+    "enabled": true,
+    "sync_interval": 300,
+    "sync_batch_size": 50,
+    "max_retries": 3,
+    "auto_start": true,
+    "log_level": "INFO"
+  },
+  "jira": {
+    "enabled": true,
+    "sync_projects": true,
+    "sync_issues": true,
+    "sync_comments": true,
+    "sync_attachments": true,
+    "jql_filters": [
+      "updated >= -1d",
+      "status not in (Done, Closed, Resolved)"
+    ],
+    "max_issues_per_sync": 100,
+    "exclude_projects": []
+  },
+  "confluence": {
+    "enabled": false,
+    "sync_spaces": true,
+    "sync_pages": true,
+    "sync_blog_posts": true,
+    "sync_comments": true,
+    "sync_attachments": true,
+    "space_keys": [],
+    "max_pages_per_sync": 100,
+    "exclude_spaces": []
+  },
+  "knowledge_base": {
+    "persist_directory": "./storage/chroma_db",
+    "collection_name": "evagent_documents",
+    "text_model": "./models/all-MiniLM-L6-v2",
+    "code_model": "./models/codebert-base",
+    "model_path": "./models/all-MiniLM-L6-v2",
+    "enable_image_embeddings": false
+  },
+  "notifications": {
+    "enabled": true,
+    "email_on_error": false,
+    "webhook_url": "",
+    "slack_webhook": ""
+  },
+  "monitoring": {
+    "enabled": true,
+    "metrics_port": 8080,
+    "health_check_interval": 60,
+    "performance_tracking": true
+  }
+}
