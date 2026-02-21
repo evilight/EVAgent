@@ -60,12 +60,12 @@ class ConfluenceConnector(BaseConnector):
             'User-Agent': 'EVAgent-RAG/1.0'
         }
     
-    async def _test_connection(self) -> None:
+    async def _test_connection(self) -> Dict[str, Any]:
         """
         Test connection to Confluence API.
         
-        Raises:
-            Exception: If connection test fails
+        Returns:
+            Dictionary with connection status and message
         """
         # Use /rest/api/content without version (confirmed working)
         url = f"{self.base_url}/rest/api/content"
@@ -77,11 +77,39 @@ class ConfluenceConnector(BaseConnector):
             async with self.session.get(url, headers=headers, params=params) as response:
                 if response.status == 200:
                     self.logger.info("Confluence connection test successful")
+                    try:
+                        content_data = await response.json()
+                        return {
+                            "status": "success",
+                            "message": "Connected to Confluence successfully",
+                            "content": content_data
+                        }
+                    except Exception as json_error:
+                        return {
+                            "status": "success",
+                            "message": "Connected to Confluence successfully",
+                            "content": None
+                        }
                 else:
                     error_text = await response.text()
                     raise Exception(f"Connection test failed with status {response.status}: {error_text}")
         except Exception as e:
             raise Exception(f"Confluence connection test failed: {e}")
+    
+    async def test_connection(self) -> Dict[str, Any]:
+        """
+        Public method to test connection.
+        
+        Returns:
+            Dictionary with connection status and message
+        """
+        try:
+            return await self._test_connection()
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": str(e)
+            }
     
     async def search_pages(
         self,

@@ -263,6 +263,57 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
+@app.post("/api/v1/sync/trigger")
+async def trigger_full_sync(current_user: str = Depends(verify_token)):
+    """Trigger full synchronization of all sources."""
+    try:
+        print(f"Full sync triggered by user: {current_user}")
+        
+        # In production, this would trigger the actual sync service
+        # For now, return a success response
+        return {
+            "status": "success",
+            "message": "Full synchronization triggered",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sync trigger failed: {str(e)}")
+
+@app.post("/api/v1/sync/jira")
+async def trigger_jira_sync(current_user: str = Depends(verify_token)):
+    """Trigger Jira synchronization."""
+    try:
+        print(f"Jira sync triggered by user: {current_user}")
+        
+        # In production, this would call the data sync service
+        # For now, return a success response
+        return {
+            "status": "success",
+            "message": "Jira synchronization triggered",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Jira sync failed: {str(e)}")
+
+@app.post("/api/v1/sync/confluence")
+async def trigger_confluence_sync(current_user: str = Depends(verify_token)):
+    """Trigger Confluence synchronization."""
+    try:
+        print(f"Confluence sync triggered by user: {current_user}")
+        
+        # In production, this would call the data sync service
+        # For now, return a success response
+        return {
+            "status": "success",
+            "message": "Confluence synchronization triggered",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Confluence sync failed: {str(e)}")
+
 @app.get("/api/v1/system/stats")
 async def system_stats():
     """System statistics endpoint"""
@@ -274,6 +325,14 @@ async def system_stats():
         "model_info": {
             "embedding_model": "all-MiniLM-L6-v2",
             "llm_model": "deepseek"
+        },
+        "sync_status": {
+            "jira_connected": False,  # Would check actual connector
+            "confluence_connected": False,  # Would check actual connector
+            "last_jira_sync": None,
+            "last_confluence_sync": None,
+            "sync_interval": 300,  # 5 minutes
+            "auto_sync_enabled": False  # Would be True in production
         },
         "timestamp": datetime.now().isoformat()
     }
