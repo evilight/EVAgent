@@ -270,7 +270,7 @@ class KnowledgeBase:
         # Add additional stats
         stats = {
             **chroma_stats,
-            'embedding_model': self.config.get('text_model', 'unknown'),
+            'embedding_model': getattr(self.embedding_service, 'text_model_name', 'all-MiniLM-L6-v2'),
             'chunk_size': self.config.get('chunk_size', 500),
             'last_updated': datetime.now(timezone.utc).isoformat()
         }
