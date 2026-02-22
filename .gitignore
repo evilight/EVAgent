@@ -124,14 +124,12 @@ dmypy.json
 
 # Project specific
 logs/
-storage/cache/
-storage/chroma_db/
-storage/temp/
+storage/
 .DS_Store
 Thumbs.db
 
-# Models directory - exclude large model files
-models/all-MiniLM-L6-v2/
+# Models directory - exclude all model files
+models/
 
 # IDE
 .vscode/

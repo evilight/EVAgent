@@ -46,6 +46,9 @@ async def test_permissions():
             endpoints = [
                 ('/rest/api/2/serverInfo', 'Public server info'),
                 ('/rest/api/3/project', 'Project list'),
+                ('/rest/api/3/project/10000', 'Specific project by ID (10000)'),
+                ('/rest/api/3/project/SCRUM', 'Specific project (SCRUM)'),
+                ('/rest/api/3/search/jql?jql=project=SCRUM&maxResults=5', 'SCRUM project issues'),
                 ('/rest/api/3/search/jql?jql=project+is+not+EMPTY&maxResults=5', 'Public issues'),
                 ('/rest/api/3/mypermissions?permissions=BROWSE_PROJECTS', 'User permissions'),
                 ('/rest/api/3/myself', 'User profile')
@@ -65,13 +68,35 @@ async def test_permissions():
                             if 'serverTitle' in data:
                                 print(f"  SUCCESS Server: {data.get('serverTitle')}")
                             elif isinstance(data, list):
-                                print(f"  SUCCESS Found {len(data)} items")
+                                print(f"  SUCCESS Found {len(data)} projects")
+                                # Show project details
+                                for i, project in enumerate(data[:3]):  # Show first 3 projects
+                                    key = project.get('key', 'Unknown')
+                                    name = project.get('name', 'Unknown')
+                                    print(f"    Project {i+1}: {name} (key: {key})")
+                            elif 'key' in data and 'name' in data:
+                                print(f"  SUCCESS Project: {data.get('name')} (key: {data.get('key')})")
                             elif 'permissions' in data:
                                 print(f"  SUCCESS Permissions loaded")
+                                permissions = data.get('permissions', [])
+                                for perm in permissions[:3]:  # Show first 3 permissions
+                                    name = perm.get('name', 'Unknown')
+                                    have = perm.get('have', False)
+                                    print(f"    {name}: {have}")
                             elif 'displayName' in data:
                                 print(f"  SUCCESS User: {data.get('displayName')}")
                             else:
-                                print(f"  SUCCESS Success")
+                                print(f"  SUCCESS Response received")
+                                print(f"  Data type: {type(data)}")
+                                if isinstance(data, dict):
+                                    print(f"  Keys: {list(data.keys())[:5]}")
+                                    if 'issues' in data:
+                                        issues = data.get('issues', [])
+                                        print(f"  Found {len(issues)} issues")
+                                        for i, issue in enumerate(issues[:2]):
+                                            key = issue.get('key', 'Unknown')
+                                            summary = issue.get('fields', {}).get('summary', 'No summary')
+                                            print(f"    Issue {i+1}: {key} - {summary[:50]}")
                         else:
                             error_text = await response.text()
                             print(f"  ERROR Status: {response.status} - {error_text[:100]}")

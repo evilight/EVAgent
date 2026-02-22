@@ -116,17 +116,29 @@ class ChromaManager:
             
             # Convert embedding to list if needed
             if isinstance(embedding, np.ndarray):
-                embedding = embedding.tolist()
+                embedding_list = embedding.tolist()
+            else:
+                embedding_list = embedding
+            
+            # Validate embedding dimension
+            expected_dim = 384  # Standard dimension for all-MiniLM-L6-v2
+            actual_dim = len(embedding_list)
+            
+            if actual_dim != expected_dim:
+                raise ValueError(
+                    f"Embedding dimension mismatch: expected {expected_dim}, got {actual_dim}. "
+                    f"Document ID: {document_id}. Ensure all embeddings use the same model."
+                )
             
             # Add to collection
             self.collection.add(
                 ids=[document_id],
-                embeddings=[embedding],
+                embeddings=[embedding_list],
                 documents=[content],
                 metadatas=[validated_metadata]
             )
             
-            self.logger.debug(f"Added document {document_id} to collection")
+            self.logger.debug(f"Added document {document_id} to collection (dim: {actual_dim})")
             return document_id
             
         except Exception as e:
@@ -161,10 +173,21 @@ class ChromaManager:
                 doc_id = doc.get('id', str(uuid.uuid4()))
                 ids.append(doc_id)
                 
-                # Prepare embedding
+                # Prepare embedding and validate dimension
                 embedding = doc['embedding']
                 if isinstance(embedding, np.ndarray):
                     embedding = embedding.tolist()
+                
+                # Validate embedding dimension
+                expected_dim = 384  # Standard dimension for all-MiniLM-L6-v2
+                actual_dim = len(embedding)
+                
+                if actual_dim != expected_dim:
+                    raise ValueError(
+                        f"Embedding dimension mismatch in batch: expected {expected_dim}, got {actual_dim}. "
+                        f"Document ID: {doc_id}. Ensure all embeddings use the same model."
+                    )
+                
                 embeddings.append(embedding)
                 
                 # Prepare content and metadata
@@ -182,7 +205,7 @@ class ChromaManager:
                 metadatas=metadatas
             )
             
-            self.logger.info(f"Added {len(documents)} documents to collection")
+            self.logger.info(f"Added {len(documents)} documents to collection (dim: {expected_dim})")
             return ids
             
         except Exception as e:
