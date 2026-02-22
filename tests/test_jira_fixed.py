@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 
 # Load environment variables
-env_file = Path('.env')
+env_file = Path(__file__).parent.parent / '.env'
 if env_file.exists():
     with open(env_file, 'r') as f:
         for line in f:
